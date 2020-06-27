@@ -1,0 +1,89 @@
+"use strict";
+
+/** @typedef {import('@adonisjs/framework/src/Request')} Request */
+/** @typedef {import('@adonisjs/framework/src/Response')} Response */
+/** @typedef {import('@adonisjs/framework/src/View')} View */
+
+const Post = use("App/Models/Post");
+
+/**
+ * Resourceful controller for interacting with posts
+ */
+class PostController {
+  /**
+   * Show a list of all posts.
+   * GET posts
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   * @param {View} ctx.view
+   */
+  async index({ request, response, view }) {
+    const posts = await Post.query().with("user").fetch();
+
+    return posts;
+  }
+
+  /**
+   * Render a form to be used for creating a new post.
+   * GET posts/create
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   * @param {View} ctx.view
+   */
+  async store({ request, auth, response }) {
+    const data = request.only(["content"]);
+    const post = await Post.create({ user_id: auth.user.id, ...data });
+
+    return post;
+  }
+
+  /**
+   * Display a single post.
+   * GET posts/:id
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   * @param {View} ctx.view
+   */
+  async show({ params, request, response, view }) {
+    const post = await Post.findOrFail(params.id);
+
+    return post;
+  }
+
+  /**
+   * Render a form to update an existing post.
+   * GET posts/:id/edit
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   * @param {View} ctx.view
+   */
+  async update({ params, request, response }) {}
+
+  /**
+   * Delete a post with id.
+   * DELETE posts/:id
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   */
+  async destroy({ params, auth, request, response }) {
+    const post = await Post.findOrFail(params.id);
+
+    if (post.user_id != auth.user.id) {
+      return response.status(401);
+    }
+
+    await post.delete();
+  }
+}
+
+module.exports = PostController;
